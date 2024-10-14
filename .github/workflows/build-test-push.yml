@@ -9,9 +9,9 @@ jobs:
     steps:
       - uses: actions/checkout@v1
       - name: Build rootless image
-        run: ./build-rootless.sh $(echo $GITHUB_REPOSITORY |cut -d '/' -f1)
+        run: ./build-rootless.sh $(echo $GITHUB_REPOSITORY |cut -d '/' -f1) ${GITHUB_REF#refs/heads/}
       - name: Build standard image
-        run: ./build.sh $(echo $GITHUB_REPOSITORY |cut -d '/' -f1)
+        run: ./build.sh $(echo $GITHUB_REPOSITORY |cut -d '/' -f1) ${GITHUB_REF#refs/heads/}"
       - name: Trivy scan
         uses: aquasecurity/trivy-action@master
         with:
