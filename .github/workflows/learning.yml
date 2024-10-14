@@ -15,3 +15,7 @@ jobs:
         run: echo "${GITHUB_REPOSITORY##*/}:${GITHUB_REF#refs/heads/}"
       - name: Get my name
         run: echo "${GITHUB_ACTOR}"
+      - name: Build standard image
+        run: ./build.sh $(echo GITHUB_REPOSITORY##*/):$(echo GITHUB_REF#refs/heads/)
+      - name: List Docker images
+        run: docker images --filter "reference=pdk_container*" --filter "reference=*/pdk_container*"
