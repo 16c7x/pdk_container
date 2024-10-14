@@ -9,13 +9,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v1
-      - name: Get branch name
-        run: echo "${GITHUB_REF#refs/heads/}"
-      - name: Get repo name
-        run: echo "${GITHUB_REPOSITORY##*/}:${GITHUB_REF#refs/heads/}"
-      - name: Get my name
-        run: echo "${GITHUB_ACTOR}"
       - name: Build standard image
         run: ./build.sh $GITHUB_ACTOR ${GITHUB_REPOSITORY##*/}:${GITHUB_REF#refs/heads/}
       - name: List Docker images
         run: docker images
+      - name: Build rootless image
+        run: ./build-rootless.sh $GITHUB_ACTOR ${GITHUB_REPOSITORY##*/}:${GITHUB_REF#refs/heads/}-rootless
+      - name: List Docker images
+        run: docker images --filter "reference=pdk_container*" --filter "reference=*/pdk_container*"
+      - name: Show Docker image labels
+        run: |
+          docker inspect --format='{{json .Config.Labels}}' ${{ secrets.DOCKERHUB_USERNAME }}/puppet-dev-tools

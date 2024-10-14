@@ -5,9 +5,6 @@ set -e
 GH_USER=${1:-puppetlabs}
 DOCKER_IMAGE=${2:-'puppet-dev-tools:latest'}
 
-echo $GH_USER
-echo $DOCKER_IMAGE
-
 docker build \
   -t ${DOCKER_IMAGE} \
   --build-arg VCS_REF=$(git rev-parse --short HEAD) \
