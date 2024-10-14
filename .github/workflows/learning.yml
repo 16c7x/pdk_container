@@ -22,4 +22,4 @@ jobs:
           docker inspect --format='{{json .Config.Labels}}' puppet/puppet-dev-tools
       - name: Show Docker image labels
         run: |
-        docker inspect --format='{{json .Config.Labels}}' ${{ secrets.DOCKERHUB_USERNAME }}/puppet-dev-tools
+          docker inspect --format='{{json .Config.Labels}}' ${{ secrets.DOCKERHUB_USERNAME }}/puppet-dev-tools
