@@ -12,7 +12,7 @@ jobs:
       - name: Get branch name
         run: echo "${GITHUB_REF#refs/heads/}"
       - name: Get repo name
-        run: echo "${GITHUB_REPOSITORY##*/}"
+        run: echo "${GITHUB_REPOSITORY##*/}:${GITHUB_REF#refs/heads/}"
       - name: Get my name
         run: echo "${GITHUB_ACTOR}"
       - name: Build rootless image
