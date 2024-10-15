@@ -23,7 +23,7 @@ jobs:
       - name: Trivy scan
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: pdk_container:puppet8_pdk3_3
+          image-ref:  ${{ github.repository }}:${{ github.ref_name }}
           exit-code: 1
           ignore-unfixed: true
           severity: 'CRITICAL,HIGH,MEDIUM'
