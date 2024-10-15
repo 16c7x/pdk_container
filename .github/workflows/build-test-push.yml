@@ -8,34 +8,57 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v1
-      - name: Build rootless image
-        run: ./build-rootless.sh $(echo $GITHUB_REPOSITORY |cut -d '/' -f1) ${GITHUB_REF#refs/heads/}
+    
+      - name: Set environment variables
+        run: |
+          echo "PROJECT_NAME=${GITHUB_REPOSITORY##*/}" >> $GITHUB_ENV
+          echo "BRANCH_NAME=${GITHUB_REF#refs/heads/}" >> $GITHUB_ENV
+
+      - name: Print environment variables
+        run: |
+          echo "Project Name: $PROJECT_NAME"
+          echo "Branch Name: $BRANCH_NAME"
+
       - name: Build standard image
-        run: ./build.sh $(echo $GITHUB_REPOSITORY |cut -d '/' -f1) ${GITHUB_REF#refs/heads/}"
+        run: ./build.sh $GITHUB_ACTOR ${GITHUB_REPOSITORY##*/}:${GITHUB_REF#refs/heads/}
+      
+      - name: List Docker images
+        run: docker images
+
+      - name: Build rootless image
+        run: ./build-rootless.sh $GITHUB_ACTOR ${GITHUB_REPOSITORY##*/}:${GITHUB_REF#refs/heads/}-rootless
+
+      - name: List Docker images
+        run: docker images --filter "reference=pdk_container*" --filter "reference=*/pdk_container*"
+
+      - name: Show Docker image labels
+        run: |
+          docker inspect --format='{{json .Config.Labels}}' ${GITHUB_REPOSITORY##*/}:${GITHUB_REF#refs/heads/}
+
       - name: Trivy scan
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: puppet-dev-tools:latest
+          image-ref:  ${{ env.PROJECT_NAME }}:${{ env.BRANCH_NAME }}
           exit-code: 1
           ignore-unfixed: true
           severity: 'CRITICAL,HIGH,MEDIUM'
           vuln-type: os
           timeout: 10m0s
           skip-files: "/root/.pdk/cache/ruby/*/gems/aws-sdk-core-*/lib/aws-sdk-ssooidc/client.rb,/opt/puppetlabs/pdk/share/cache/ruby/*/gems/aws-sdk-core-*/lib/aws-sdk-ssooidc/client.rb"
+
       - name: Run tests
-        run: cd tests; ./run_tests.sh
+        working-directory: ${{ github.workspace }}/tests
+        run: ./run_tests.sh
+                  
       - name: Tag Docker images
         run: |
-          docker tag puppet-dev-tools:latest-rootless ${{ secrets.DOCKERHUB_PUSH_USERNAME }}/puppet-dev-tools:puppet8-rootless
-          docker tag puppet-dev-tools:latest ${{ secrets.DOCKERHUB_PUSH_USERNAME }}/puppet-dev-tools:puppet8
-      - name: List Docker images
-        run: docker images --filter "reference=puppet-dev-tools*" --filter "reference=*/puppet-dev-tools*"
-      - name: Show Docker image labels
-        run: |
-          docker inspect --format='{{json .Config.Labels}}' ${{ secrets.DOCKERHUB_PUSH_USERNAME }}/puppet-dev-tools:puppet8
+          docker tag ${GITHUB_REPOSITORY##*/}:${GITHUB_REF#refs/heads/}-rootless ${{ secrets.DOCKERHUB_USERNAME }}/${GITHUB_REPOSITORY##*/}:${GITHUB_REF#refs/heads/}-rootless
+          docker tag ${GITHUB_REPOSITORY##*/}:${GITHUB_REF#refs/heads/} ${{ secrets.DOCKERHUB_USERNAME }}/${GITHUB_REPOSITORY##*/}:${GITHUB_REF#refs/heads/}
+
       - name: Login to Docker Hub
-        run: echo ${{ secrets.DOCKERHUB_PASSWORD }} | docker login -u ${{ secrets.DOCKERHUB_LOGIN_USERNAME }} --password-stdin
+        run: echo ${{ secrets.DOCKERHUB_TOKEN }} | docker login -u ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
+
       - name: Push Docker images
         run: |
-          docker push ${{ secrets.DOCKERHUB_PUSH_USERNAME }}/puppet-dev-tools:puppet8-rootless
-          docker push ${{ secrets.DOCKERHUB_PUSH_USERNAME }}/puppet-dev-tools:puppet8
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/${GITHUB_REPOSITORY##*/}:${GITHUB_REF#refs/heads/}-rootless
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/${GITHUB_REPOSITORY##*/}:${GITHUB_REF#refs/heads/}

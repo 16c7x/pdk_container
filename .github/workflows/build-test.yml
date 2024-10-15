@@ -9,25 +9,44 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v1
-      - name: Build rootless image
-        run: ./build-rootless.sh $(echo $GITHUB_REPOSITORY |cut -d '/' -f1)
+    
+      - name: Set environment variables
+        run: |
+          echo "PROJECT_NAME=${GITHUB_REPOSITORY##*/}" >> $GITHUB_ENV
+          echo "BRANCH_NAME=${GITHUB_REF#refs/heads/}" >> $GITHUB_ENV
+
+      - name: Print environment variables
+        run: |
+          echo "Project Name: $PROJECT_NAME"
+          echo "Branch Name: $BRANCH_NAME"
+
       - name: Build standard image
-        run: ./build.sh $(echo $GITHUB_REPOSITORY |cut -d '/' -f1)
+        run: ./build.sh $GITHUB_ACTOR ${GITHUB_REPOSITORY##*/}:${GITHUB_REF#refs/heads/}
+      
       - name: List Docker images
-        run: docker images --filter "reference=puppet-dev-tools*" --filter "reference=*/puppet-dev-tools*"
+        run: docker images
+
+      - name: Build rootless image
+        run: ./build-rootless.sh $GITHUB_ACTOR ${GITHUB_REPOSITORY##*/}:${GITHUB_REF#refs/heads/}-rootless
+
+      - name: List Docker images
+        run: docker images --filter "reference=pdk_container*" --filter "reference=*/pdk_container*"
+
       - name: Show Docker image labels
         run: |
-          docker inspect --format='{{json .Config.Labels}}' ${{ secrets.DOCKERHUB_USERNAME }}/puppet-dev-tools
+          docker inspect --format='{{json .Config.Labels}}' ${GITHUB_REPOSITORY##*/}:${GITHUB_REF#refs/heads/}
+
       - name: Trivy scan
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: puppet-dev-tools:latest
+          image-ref:  ${{ env.PROJECT_NAME }}:${{ env.BRANCH_NAME }}
           exit-code: 1
           ignore-unfixed: true
           severity: 'CRITICAL,HIGH,MEDIUM'
           vuln-type: os
           timeout: 10m0s
           skip-files: "/root/.pdk/cache/ruby/*/gems/aws-sdk-core-*/lib/aws-sdk-ssooidc/client.rb,/opt/puppetlabs/pdk/share/cache/ruby/*/gems/aws-sdk-core-*/lib/aws-sdk-ssooidc/client.rb"
+
       - name: Run tests
         working-directory: ${{ github.workspace }}/tests
-        run: ./run_tests.sh
+        run: ./run_tests.sh          
