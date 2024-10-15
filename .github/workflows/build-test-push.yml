@@ -48,7 +48,7 @@ jobs:
 
       - name: Run tests
         working-directory: ${{ github.workspace }}/tests
-        run: ./run_tests.sh
+        run: ./run_tests.sh 
                   
       - name: Tag Docker images
         run: |
