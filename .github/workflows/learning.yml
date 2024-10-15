@@ -9,23 +9,36 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v1
-      - name: Get varigithub env variables
-        run: echo $GITHUB_ENV
+    
+      - name: Set environment variables
+        run: |
+          echo "PROJECT_NAME=${GITHUB_REPOSITORY##*/}" >> $GITHUB_ENV
+          echo "BRANCH_NAME=${GITHUB_REF#refs/heads/}" >> $GITHUB_ENV
+
+      - name: Print environment variables
+        run: |
+          echo "Project Name: $PROJECT_NAME"
+          echo "Branch Name: $BRANCH_NAME"
       - name: Build standard image
         run: ./build.sh $GITHUB_ACTOR ${GITHUB_REPOSITORY##*/}:${GITHUB_REF#refs/heads/}
+      
       - name: List Docker images
         run: docker images
+
       - name: Build rootless image
         run: ./build-rootless.sh $GITHUB_ACTOR ${GITHUB_REPOSITORY##*/}:${GITHUB_REF#refs/heads/}-rootless
+
       - name: List Docker images
         run: docker images --filter "reference=pdk_container*" --filter "reference=*/pdk_container*"
+
       - name: Show Docker image labels
         run: |
           docker inspect --format='{{json .Config.Labels}}' ${GITHUB_REPOSITORY##*/}:${GITHUB_REF#refs/heads/}
+
       - name: Trivy scan
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref:  ${{ env.REPO_NAME }}:${{ github.ref_name }}
+          image-ref:  ${{ env.PROJECT_NAME }}:${{ env.BRANCH_NAME }}
           exit-code: 1
           ignore-unfixed: true
           severity: 'CRITICAL,HIGH,MEDIUM'
