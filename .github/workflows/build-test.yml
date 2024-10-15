@@ -49,4 +49,4 @@ jobs:
 
       - name: Run tests
         working-directory: ${{ github.workspace }}/tests
-        run: ./run_tests.sh          
+        run: ./run_tests.sh ${GITHUB_REPOSITORY##*/}:${GITHUB_REF#refs/heads/}          
