@@ -19,6 +19,7 @@ jobs:
         run: |
           echo "Project Name: $PROJECT_NAME"
           echo "Branch Name: $BRANCH_NAME"
+
       - name: Build standard image
         run: ./build.sh $GITHUB_ACTOR ${GITHUB_REPOSITORY##*/}:${GITHUB_REF#refs/heads/}
       
@@ -45,3 +46,7 @@ jobs:
           vuln-type: os
           timeout: 10m0s
           skip-files: "/root/.pdk/cache/ruby/*/gems/aws-sdk-core-*/lib/aws-sdk-ssooidc/client.rb,/opt/puppetlabs/pdk/share/cache/ruby/*/gems/aws-sdk-core-*/lib/aws-sdk-ssooidc/client.rb"
+
+      - name: Run tests
+        working-directory: ${{ github.workspace }}/tests
+        run: ./run_tests.sh          
