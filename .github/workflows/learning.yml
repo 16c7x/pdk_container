@@ -19,7 +19,4 @@ jobs:
         run: docker images --filter "reference=pdk_container*" --filter "reference=*/pdk_container*"
       - name: Show Docker image labels
         run: |
-          docker inspect --format='{{json .Config.Labels}}' pdk_container
-      - name: Show Docker image labels
-        run: |
           docker inspect --format='{{json .Config.Labels}}' ${GITHUB_REPOSITORY##*/}:${GITHUB_REF#refs/heads/}
